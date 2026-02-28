@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Streaming Platform</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body>
+    <div id="root"></div>
+    <script src="https://cdn.jsdelivr.net/npm/react@17.0.2/umd/react.development.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/react-dom@17.0.2/umd/react-dom.development.js"></script>
+    <script>
+        const { useState, useEffect } = React;
+        
+        function App() {
+            const [users, setUsers] = useState([]);
+            const [content, setContent] = useState([]);
+            const [ratings, setRatings] = useState([]);
+            const [watchHistory, setWatchHistory] = useState([]);
+            const [currentUser, setCurrentUser] = useState(null);
+            const [currentContent, setCurrentContent] = useState(null);
+            
+            useEffect(() => {
+                fetch('/users')
+                    .then(response => response.json())
+                    .then(data => setUsers(data));
+                
+                fetch('/content')
+                    .then(response => response.json())
+                    .then(data => setContent(data));
+                
+                fetch('/ratings')
+                    .then(response => response.json())
+                    .then(data => setRatings(data));
+                
+                fetch('/watch_history')
+                    .then(response => response.json())
+                    .then(data => setWatchHistory(data));
+            }, []);
+            
+            const handleLogin = (user) => {
+                setCurrentUser(user);
+            }
+            
+            const handleLogout = () => {
+                setCurrentUser(null);
+            }
+            
+            const handleContentSelect = (content) => {
+                setCurrentContent(content);
+            }
+            
+            const handleRatingSubmit = (rating) => {
+                fetch('/ratings', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(rating)
+                })
+                    .then(response => response.json())
+                    .then(data => setRatings([...ratings, data]));
+            }
+            
+            const handleWatchHistorySubmit = (watchHistoryEntry) => {
+                fetch('/watch_history', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(watchHistoryEntry)
+                })
+                    .then(response => response.json())
+                    .then(data => setWatchHistory([...watchHistory, data]));
+            }
+            
+            return (
+                <div className="container mx-auto p-4 pt-6 mt-10">
+                    <h1 className="text-3xl font-bold mb-4">Streaming Platform</h1>
+                    {currentUser ? (
+                        <div>
+                            <h2 className="text-2xl font-bold mb-4">Welcome, {currentUser.username}!</h2>
+                            <button className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded" onClick={handleLogout}>Logout</button>
+                            <div className="mt-10">
+                                <h2 className="text-2xl font-bold mb-4">Content</h2>
+                                <ul>
+                                    {content.map((content) => (
+                                        <li key={content.id}>
+                                            <a href="#" onClick={() => handleContentSelect(content)}>{content.title}</a>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                            {currentContent ? (
+                                <div className="mt-10">
+                                    <h2 className="text-2xl font-bold mb-4">{currentContent.title}</h2>
+                                    <p>{currentContent.description}</p>
+                                    <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" onClick={() => handleRatingSubmit({ user_id: currentUser.id, content_id: currentContent.id, rating: 5 })}>Rate 5 stars</button>
+                                    <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" onClick={() => handleWatchHistorySubmit({ user_id: currentUser.id, content_id: currentContent.id, watch_date: new Date().toISOString().split('T')[0] })}>Add to watch history</button>
+                                </div>
+                            ) : null}
+                        </div>
+                    ) : (
+                        <div>
+                            <h2 className="text-2xl font-bold mb-4">Login</h2>
+                            <ul>
+                                {users.map((user) => (
+                                    <li key={user.id}>
+                                        <a href="#" onClick={() => handleLogin(user)}>{user.username}</a>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+        
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
