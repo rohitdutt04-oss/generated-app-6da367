@@ -1,0 +1,11 @@
+services:
+  web:
+    type: web
+    env: python
+    region: oregon
+    plan: free
+    buildCommand: ''
+    startCommand: 'python app.py'
+    envVars:
+    - key: VARIABLE
+      value: VALUE
